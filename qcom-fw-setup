@@ -1,0 +1,108 @@
+#!/bin/bash
+# config
+FW=/lib/firmware
+CFG=/var/lib/qcom-fw-setup
+SQUASH_TO_MBN=true
+COMPATIBLE_NODE=/sys/firmware/devicetree/base/compatible
+
+# runtime vars
+PARTLABEL=""  # e.g. "modem"
+SLOTSUFFIX="" # e.g. "_a"
+FILE=""       # e.g. "$CFG/oneplus-dumpling"
+WORK=""       # e.g. "/tmp/qcom-fw-setup.eRDVCz"
+
+# functions
+umount_fw() { [ "$(grep " $WORK " /proc/mounts)" ] && umount "$WORK"; }
+cleanup() { umount_fw && rmdir "$WORK"; }
+die() { echo "$*"; exit 1; }
+error() { die "ERROR: $*"; }
+get_board_config() {
+	local boards=""
+	[ -r $COMPATIBLE_NODE ] || error "$COMPATIBLE_NODE doesn't exist!"
+	while read -d '' board; do
+		board=${board/,/-} # e.g. 'oneplus,dumpling' -> 'oneplus-dumpling'
+		if [ -r "$CFG/$board" ]; then
+			FILE="$CFG/$board"
+			break
+		else
+			boards+="$board "
+		fi
+	done < $COMPATIBLE_NODE
+	if [ -z "$FILE" ]; then
+		[ "$boards" ] || error "Couldn't parse compatible from $COMPATIBLE_NODE!"
+		error "No config for any of '${boards::-1}' under $CFG!"
+	fi
+}
+mount_fw() {
+	umount_fw
+	mount -r PARTLABEL=$PARTLABEL$SLOTSUFFIX "$WORK" || error "Failed to mount '$PARTLABEL$SLOTSUFFIX'!"
+}
+get_outdir_mdt() {
+	local outdir=$1; shift
+	for f in $@; do
+		[[ "$f" = *".mdt" ]] && echo "$outdir/$(basename $f)"
+	done
+}
+get_cmdline_opt() {
+	for opt in $(</proc/cmdline); do
+		case $opt in
+			$1=*) echo ${opt#*=} ;;
+		esac
+	done
+}
+process_fw() {
+	local paths=($1) path files=() outpath outdir
+	for (( i=0; i<${#paths[@]}; i++ )); do
+		path="${paths[$i]}"
+		[ $i -lt $((${#paths[@]}-1)) ] && files+=($WORK/$path) || outpath="$path"
+	done
+	[[ "$outpath" = *"/" ]] && outdir="$outpath" || outdir="$(dirname "$outpath")"
+	outpath="$FW/$outpath"; outdir="$FW/$outdir"
+
+	[ ${#files[@]} -gt 0 ] || error "No files specified to copy to '$outpath'!"
+	files=($(eval "echo ${files[*]}")) # expand braces
+	[ -e "$outdir" ] || mkdir -p "$outdir"
+	if [[ ${#files[@]} -gt 1 ]]; then
+		cp -a ${files[*]} $outdir || error "Failed to copy $PARTLABEL files to '$outdir'!"
+	else
+		cp -a ${files[*]} $outpath || error "Failed to copy '${files[*]}' to '$outdir'!"
+	fi
+
+	# PIL image squashing to MBN
+	if [[ "$outpath" = *".mbn" ]]; then
+		local mdt="$(get_outdir_mdt $outdir ${files[*]})"
+		[ -r "$mdt" ] || error "Couldn't find .mdt header for '$outpath'!"
+		if $SQUASH_TO_MBN; then
+			# cleanup .mbn -> .mdt symlink (which breaks pil-squasher)
+			[ -L $outpath ] && rm $outpath
+			pil-squasher $outpath $mdt || error "Failed to create '$outpath'!"
+			# cleanup .mdt & .b* files in outdir
+			for f in ${files[*]}; do rm "$outdir/$(basename $f)"; done
+		else
+			ln -sf $(basename $mdt) $outpath
+		fi
+	fi
+}
+parse_config() {
+	while read line; do
+		if [ "${line: -1}" = ":" ]; then
+			PARTLABEL="${line::-1}"
+			mount_fw
+			continue
+		fi
+		[ "$PARTLABEL" ] || error "No PARTLABEL defined, not processing '$line'!"
+
+		process_fw "$line"
+	done < <(grep -Ev '^(#|$)' "$FILE")
+}
+
+# script
+[ $EUID -eq 0 ] || die "Please run $0 as root!"
+get_board_config
+SLOTSUFFIX="$(get_cmdline_opt androidboot.slot_suffix)"
+if $SQUASH_TO_MBN; then
+	[ -x "$(command -v pil-squasher)" ] || SQUASH_TO_MBN=false
+fi
+WORK="$(mktemp -td qcom-fw-setup.XXXXXX)"
+trap cleanup EXIT
+parse_config
