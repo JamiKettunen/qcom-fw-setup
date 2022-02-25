@@ -107,11 +107,12 @@ setup_wlan() {
 
 	umount_fw
 	mv $FW_DIR/bdwlan $WORK/
-	local scripts="$QCA_SAK/tools/scripts/$WLAN_DRIVER" bdencoder fwencoder hwdir \
-		board_json file i=0 ext board_bin firmware_bin
+	local scripts bdencoder fwencoder bdwlan board_json hwdir board_bin firmware_bin file i=0 ext
+	scripts="$QCA_SAK/tools/scripts/$WLAN_DRIVER"
 	bdencoder="$scripts/$WLAN_DRIVER-bdencoder"
 	fwencoder="$scripts/$WLAN_DRIVER-fwencoder"
-	board_json="$WORK/bdwlan/board-2.json"
+	bdwlan="$WORK/bdwlan"
+	board_json="$bdwlan/board-2.json"
 	hwdir="$FW_DIR/$WLAN_DRIVER/$WLAN_HW"
 	board_bin="$hwdir/board-2.bin"
 	firmware_bin="$hwdir/firmware-$WLAN_FW_API.bin"
@@ -122,8 +123,7 @@ setup_wlan() {
 
 	{
 		echo "["
-		# TODO: bdwlan*.* ???
-		for file in $WORK/bdwlan/bdwlan.*; do
+		for file in $bdwlan/bdwlan.*; do
 			[[ $file = *.txt ]] && continue
 
 			i=$((i+1))
@@ -144,7 +144,7 @@ setup_wlan() {
 	mkdir -p "$hwdir"
 	$bdencoder -c "$board_json" -o $board_bin >/dev/null || \
 		error "Failed to create $(basename "$board_bin") for $WLAN_DRIVER!"
-	rm -rf $bdwlan $board_json
+	rm -rf $bdwlan
 
 	if [ ${#WLAN_FW_FLAGS[@]} -gt 0 ]; then
 		$fwencoder -c --timestamp=0 --set-fw-api=$WLAN_FW_API --features="$WLAN_FW_FEATURES" \
