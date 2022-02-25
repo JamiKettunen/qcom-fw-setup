@@ -1,0 +1,2 @@
+. msm8998-wlan
+WLAN_FW_FEATURES="wowlan,mgmt-tx-by-ref,non-bmi"
