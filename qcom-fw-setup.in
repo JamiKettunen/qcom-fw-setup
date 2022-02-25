@@ -1,0 +1,167 @@
+#!/bin/bash
+# config
+CFG=@CFG_DIR@
+FW_DIR=@FW_DIR@
+QCA_SAK=@QCA_SAK_DIR@
+SQUASH_TO_MBN=false
+WLAN_DRIVER="" # e.g. "ath10k"
+WLAN_HW="" # e.g. "WCN3990/hw1.0"
+WLAN_FW_API=4
+WLAN_FW_FEATURES="" # see e.g. "ath10k-fwencoder --help"
+WLAN_FW_FLAGS=()
+
+# runtime vars
+PARTLABEL=""  # e.g. "modem"
+SLOTSUFFIX="" # e.g. "_a"
+BOARD=""      # e.g. "oneplus-dumpling"
+WORK=""       # e.g. "/tmp/qcom-fw-setup.eRDVCz"
+
+# constants
+COMPATIBLE_NODE=/sys/firmware/devicetree/base/compatible
+
+# functions
+umount_fw() {
+	if grep -q " $WORK " /proc/mounts; then
+		umount "$WORK"
+	fi
+}
+cleanup() { umount_fw && rm -r "$WORK"; }
+die() { echo "$*"; exit 1; }
+error() { die "ERROR: $*"; }
+get_board_config() {
+	local boards=() board
+	[ -r $COMPATIBLE_NODE ] || error "$COMPATIBLE_NODE doesn't exist!"
+	while read -d '' board; do
+		board=${board/,/-} # e.g. 'oneplus,dumpling' -> 'oneplus-dumpling'
+		if [ -f "$CFG/$board" ]; then
+			pushd "$CFG" >/dev/null
+			. $board || error "Couldn't read '$CFG/$board'!"
+			popd >/dev/null
+			declare -F process_fw >/dev/null || error "'$board' requires a process_fw function!"
+			BOARD="$board"
+			break
+		else
+			boards+=($board)
+		fi
+	done < $COMPATIBLE_NODE
+	if [ -z "$BOARD" ]; then
+		[ ${#boards[@]} -gt 0 ] || error "Couldn't parse compatible from $COMPATIBLE_NODE!"
+		error "No config for any of '${boards[*]}' under $CFG!"
+	fi
+}
+get_outdir_mdt() {
+	local f outdir=$1; shift
+	for f in "$@"; do
+		[[ "$f" = *".mdt" ]] && echo "$outdir/$(basename $f)"
+	done
+}
+get_cmdline_opt() {
+	local opt
+	for opt in $(</proc/cmdline); do
+		case $opt in
+			$1=*) echo ${opt#*=} ;;
+		esac
+	done
+}
+par() {
+	umount_fw
+	PARTLABEL="$1"
+	mount -r PARTLABEL=$PARTLABEL$SLOTSUFFIX "$WORK" || error "Failed to mount '$PARTLABEL$SLOTSUFFIX'!"
+}
+fw() {
+	[ "$PARTLABEL" ] || error "No PARTLABEL defined, not processing 'fw $*'!"
+
+	local paths=("$@") path files=() outpath outdir
+	for (( i=0; i<${#paths[@]}; i++ )); do
+		path="${paths[$i]}"
+		[ $i -lt $((${#paths[@]}-1)) ] && files+=($WORK/$path) || outpath="$path"
+	done
+	[[ "$outpath" = *"/" ]] && outdir="$outpath" || outdir="$(dirname "$outpath")"
+	outpath="$FW_DIR/$outpath"; outdir="$FW_DIR/$outdir"
+
+	[ ${#files[@]} -gt 0 ] || error "No files specified to copy to '$outpath'!"
+	[ -e "$outdir" ] || mkdir -p "$outdir"
+	if [[ ${#files[@]} -gt 1 ]]; then
+		cp -a ${files[*]} $outdir || error "Failed to copy $PARTLABEL files to '$outdir'!"
+	else
+		cp -a ${files[*]} $outpath || error "Failed to copy '${files[*]}' to '$outdir'!"
+	fi
+
+	# PIL image squashing to MBN
+	if [[ "$outpath" = *".mbn" ]]; then
+		local mdt="$(get_outdir_mdt $outdir ${files[*]})"
+		[ -r "$mdt" ] || error "Couldn't find .mdt header for '$outpath'!"
+		if $SQUASH_TO_MBN; then
+			# cleanup .mbn -> .mdt symlink (which breaks pil-squasher)
+			[ -L $outpath ] && rm $outpath
+			pil-squasher $outpath $mdt || error "Failed to create '$outpath'!"
+			# cleanup .mdt & .b* files in outdir
+			for f in ${files[*]}; do rm "$outdir/$(basename $f)"; done
+		else
+			ln -sf $(basename $mdt) $outpath
+		fi
+	fi
+}
+setup_wlan() {
+	[[ "$WLAN_DRIVER" && -e $FW_DIR/bdwlan ]] || return 0
+
+	umount_fw
+	mv $FW_DIR/bdwlan $WORK/
+	local scripts="$QCA_SAK/tools/scripts/$WLAN_DRIVER" bdencoder fwencoder hwdir \
+		board_json file i=0 ext board_bin firmware_bin
+	bdencoder="$scripts/$WLAN_DRIVER-bdencoder"
+	fwencoder="$scripts/$WLAN_DRIVER-fwencoder"
+	board_json="$WORK/bdwlan/board-2.json"
+	hwdir="$FW_DIR/$WLAN_DRIVER/$WLAN_HW"
+	board_bin="$hwdir/board-2.bin"
+	firmware_bin="$hwdir/firmware-$WLAN_FW_API.bin"
+
+	[ -d "$QCA_SAK" ] || error "Please clone https://github.com/qca/qca-swiss-army-knife to $QCA_SAK!"
+	[ -f "$bdencoder" ] || error "$WLAN_DRIVER-bdencoder wasn't found!"
+	[[ ${#WLAN_FW_FLAGS[@]} -gt 0 && ! -f "$fwencoder" ]] && error "WLAN_FW_FLAGS defined while $WLAN_DRIVER-fwencoder wasn't found!"
+
+	{
+		echo "["
+		# TODO: bdwlan*.* ???
+		for file in $WORK/bdwlan/bdwlan.*; do
+			[[ $file = *.txt ]] && continue
+
+			i=$((i+1))
+			[ $i -ne 1 ] && echo "  },"
+
+			echo "  {
+    \"data\": \"$file\","
+			if [[ $file = */bdwlan.bin ]]; then
+				ext="ff"
+			else
+				ext="$(printf '%x\n' "$(basename "$file" | sed -E 's:^.*\.b?([0-9a-f]*)$:0x\1:')")"
+			fi
+			echo "    \"names\": [\"bus=snoc,qmi-board-id=$ext\"]"
+		done
+		echo "  }
+]"
+	} > "$board_json"
+	mkdir -p "$hwdir"
+	$bdencoder -c "$board_json" -o $board_bin >/dev/null || \
+		error "Failed to create $(basename "$board_bin") for $WLAN_DRIVER!"
+	rm -rf $bdwlan $board_json
+
+	if [ ${#WLAN_FW_FLAGS[@]} -gt 0 ]; then
+		$fwencoder -c --timestamp=0 --set-fw-api=$WLAN_FW_API --features="$WLAN_FW_FEATURES" \
+			"${WLAN_FW_FLAGS[@]}" -o $firmware_bin >/dev/null || \
+			error "Failed to create $(basename "$firmware_bin") for $WLAN_DRIVER!"
+	fi
+}
+
+# script
+[ $EUID -eq 0 ] || die "Please run $0 as root!"
+get_board_config
+SLOTSUFFIX="$(get_cmdline_opt androidboot.slot_suffix)"
+if $SQUASH_TO_MBN; then
+	[ -x "$(command -v pil-squasher)" ] || SQUASH_TO_MBN=false
+fi
+WORK="$(mktemp -td qcom-fw-setup.XXXXXX)"
+trap cleanup EXIT
+echo "Setting up firmware for $BOARD..."
+process_fw
+setup_wlan
