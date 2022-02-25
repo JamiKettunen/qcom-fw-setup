@@ -18,10 +18,8 @@ This is going to be the config file for your device.
 WLAN_DRIVER="ath10k"
 WLAN_HW="WCN3990/hw1.0"
 WLAN_FW_API=5
-WLAN_FW_FLAGS=(
-	--set-wmi-op-version="tlv" --set-htt-op-version="tlv"
-	--features="wowlan,mgmt-tx-by-ref,non-bmi,single-chan-info-per-channel"
-)
+WLAN_FW_FEATURES="wowlan,mgmt-tx-by-ref,non-bmi,single-chan-info-per-channel"
+WLAN_FW_FLAGS=(--set-wmi-op-version="tlv" --set-htt-op-version="tlv")
 SQUASH_TO_MBN=true
 
 process_fw() {
