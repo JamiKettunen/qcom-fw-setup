@@ -66,7 +66,7 @@ get_cmdline_opt() {
 par() {
 	umount_fw
 	PARTLABEL="$1"
-	mount -r PARTLABEL=$PARTLABEL$SLOTSUFFIX "$WORK" || error "Failed to mount '$PARTLABEL$SLOTSUFFIX'!"
+	mount -o ro PARTLABEL=$PARTLABEL$SLOTSUFFIX "$WORK" || error "Failed to mount '$PARTLABEL$SLOTSUFFIX'!"
 }
 fw() {
 	[ "$PARTLABEL" ] || error "No PARTLABEL defined, not processing 'fw $*'!"
