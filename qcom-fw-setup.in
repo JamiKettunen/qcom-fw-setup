@@ -14,7 +14,7 @@ WLAN_FW_FLAGS=()
 PARTLABEL=""  # e.g. "modem"
 SLOTSUFFIX="" # e.g. "_a"
 BOARD=""      # e.g. "oneplus-dumpling"
-WORK=""       # e.g. "/tmp/qcom-fw-setup.eRDVCz"
+WORK=""       # e.g. "/run/qcom-fw-setup.eRDVCz"
 
 # constants
 COMPATIBLE_NODE=/sys/firmware/devicetree/base/compatible
@@ -160,7 +160,7 @@ SLOTSUFFIX="$(get_cmdline_opt androidboot.slot_suffix)"
 if $SQUASH_TO_MBN; then
 	[ -x "$(command -v pil-squasher)" ] || SQUASH_TO_MBN=false
 fi
-WORK="$(mktemp -td qcom-fw-setup.XXXXXX)"
+WORK="$(mktemp -dp /run -t qcom-fw-setup.XXXXXX)"
 trap cleanup EXIT
 echo "Setting up firmware for $BOARD..."
 process_fw
