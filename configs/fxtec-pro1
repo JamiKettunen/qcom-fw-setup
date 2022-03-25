@@ -1,0 +1,24 @@
+# F(x)tec Pro¹ (2019 QX1000 model)
+. msm8998-wlan
+SQUASH_TO_MBN=true
+
+process_fw() {
+	# GPU + IPA
+	par vendor
+	fw firmware/a540_zap.{mdt,b*}                    qcom/msm8998/fxtec/a540_zap.mbn
+	fw firmware/{a530_{pfp.fw,pm4.fw},a540_gpmu.fw2} qcom/
+	fw firmware/ipa_fws.{mdt,b*}                     qcom/msm8998/fxtec/ipa_fws.mbn
+
+	# BT
+	par bluetooth
+	fw image/cr{btfw21.tlv,nv21.bin} qca/
+
+	# ADSP, SLPI, Modem, Wi-Fi, Venus
+	par modem
+	fw image/adsp.{mdt,b*}                                                 qcom/msm8998/fxtec/adsp.mbn
+	fw image/slpi_v2.{mdt,b*}                                              qcom/msm8998/fxtec/slpi_v2.mbn
+	fw image/modem.{mdt,b*}                                                qcom/msm8998/fxtec/modem.mbn
+	fw image/venus.{mdt,b*}                                                qcom/msm8998/fxtec/venus.mbn
+	fw image/{{adspua,modemuw,modemr,slpius,slpir}.jsn,{mba,wlanmdsp}.mbn} qcom/msm8998/fxtec/
+	fw image/bdwlan*.*                                                     bdwlan/
+}
