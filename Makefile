@@ -13,12 +13,16 @@ qcom-fw-setup: qcom-fw-setup.in
 check:
 	shellcheck qcom-fw-setup
 
+install-all: install install-qca-sak
 install:
 	install -Dm755 qcom-fw-setup -t $(DESTDIR)$(PREFIX)/bin
 	if [ -d configs ]; then \
 		mkdir -p $(DESTDIR)$(CFG_DIR); \
 		cp -a configs/* $(DESTDIR)$(CFG_DIR); \
 	fi
+
+install-qca-sak:
+	git clone https://github.com/qca/qca-swiss-army-knife.git $(QCA_SAK_DIR)
 
 clean:
 	rm -f qcom-fw-setup
