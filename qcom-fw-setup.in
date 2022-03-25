@@ -3,7 +3,7 @@
 CFG=@CFG_DIR@
 FW_DIR=@FW_DIR@
 QCA_SAK=@QCA_SAK_DIR@
-SQUASH_TO_MBN=false
+SQUASH_TO_MBN=
 WLAN_DRIVER="" # e.g. "ath10k"
 WLAN_HW="" # e.g. "WCN3990/hw1.0"
 WLAN_FW_API=4
@@ -91,7 +91,7 @@ fw() {
 	if [[ "$outpath" = *".mbn" ]]; then
 		local mdt="$(get_outdir_mdt $outdir ${files[*]})"
 		[ -r "$mdt" ] || error "Couldn't find .mdt header for '$outpath'!"
-		if $SQUASH_TO_MBN; then
+		if [ "$SQUASH_TO_MBN" ]; then
 			# cleanup .mbn -> .mdt symlink (which breaks pil-squasher)
 			[ -L $outpath ] && rm $outpath
 			pil-squasher $outpath $mdt || error "Failed to create '$outpath'!"
@@ -157,8 +157,8 @@ setup_wlan() {
 [ $EUID -eq 0 ] || die "Please run $0 as root!"
 get_board_config
 SLOTSUFFIX="$(get_cmdline_opt androidboot.slot_suffix)"
-if $SQUASH_TO_MBN; then
-	[ -x "$(command -v pil-squasher)" ] || SQUASH_TO_MBN=false
+if [ "$SQUASH_TO_MBN" ]; then
+	[ -x "$(command -v pil-squasher)" ] || unset SQUASH_TO_MBN
 fi
 WORK="$(mktemp -dp /run -t qcom-fw-setup.XXXXXX)"
 trap cleanup EXIT
