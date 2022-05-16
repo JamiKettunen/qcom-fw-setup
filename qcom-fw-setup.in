@@ -52,7 +52,10 @@ get_board_config() {
 get_outdir_mdt() {
 	local f outdir=$1; shift
 	for f in "$@"; do
-		[[ "$f" = *".mdt" ]] && echo "$outdir/$(basename $f)"
+		if [[ "$f" = *".mdt" ]]; then
+			echo "$outdir/$(basename $f)"
+			return
+		fi
 	done
 }
 get_cmdline_opt() {
