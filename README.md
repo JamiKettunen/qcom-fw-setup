@@ -6,7 +6,7 @@ Configurable firmware setup script for Qualcomm devices running Linux.
 ```bash
 while read -d '' board; do
   echo ${board/,/-}
-done </sys/firmware/devicetree/base/compatible
+done </proc/device-tree/compatible
 ```
 This is going to be the config file for your device.
 

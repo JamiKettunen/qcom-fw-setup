@@ -17,7 +17,7 @@ BOARD=""      # e.g. "oneplus-dumpling"
 WORK=""       # e.g. "/run/qcom-fw-setup.eRDVCz"
 
 # constants
-COMPATIBLE_NODE=/sys/firmware/devicetree/base/compatible
+COMPATIBLE_NODE=/proc/device-tree/compatible
 
 # functions
 umount_fw() {
