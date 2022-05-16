@@ -6,7 +6,7 @@ process_fw() {
 	# GPU + IPA
 	par vendor
 	fw firmware/a540_zap.{mdt,b*}                    qcom/msm8998/fxtec/a540_zap.mbn
-	fw firmware/{a530_{pfp.fw,pm4.fw},a540_gpmu.fw2} qcom/
+	fw -o firmware/{a530_{pfp.fw,pm4.fw},a540_gpmu.fw2} qcom/
 	fw firmware/ipa_fws.{mdt,b*}                     qcom/msm8998/fxtec/ipa_fws.mbn
 
 	# BT
