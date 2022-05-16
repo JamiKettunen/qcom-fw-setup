@@ -6,12 +6,12 @@ process_fw() {
 	# GPU + IPA
 	par vendor
 	fw firmware/a540_zap.{mdt,b*}                    qcom/msm8998/oneplus/a540_zap.mbn
-	fw firmware/{a530_{pfp.fw,pm4.fw},a540_gpmu.fw2} qcom/
+	fw -o firmware/{a530_{pfp.fw,pm4.fw},a540_gpmu.fw2} qcom/
 	fw firmware/ipa_fws.{mdt,b*}                     qcom/msm8998/oneplus/ipa_fws.mbn
 
 	# BT
 	par bluetooth
-	fw image/cr{btfw21.tlv,nv21.bin} qca/
+	fw -o image/cr{btfw21.tlv,nv21.bin} qca/
 
 	# ADSP, SLPI, Modem, Wi-Fi, Venus
 	par modem
