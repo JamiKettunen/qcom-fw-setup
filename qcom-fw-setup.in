@@ -71,7 +71,15 @@ par() {
 fw() {
 	[ "$PARTLABEL" ] || error "No PARTLABEL defined, not processing 'fw $*'!"
 
-	local paths=("$@") path files=() outpath outdir
+	local optional_args=() paths=() path files=() outpath outdir mdt
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			-o) optional_args+=(-n) ;;
+			*) paths+=("$1") ;;
+		esac
+		shift
+	done
+
 	for (( i=0; i<${#paths[@]}; i++ )); do
 		path="${paths[$i]}"
 		[ $i -lt $((${#paths[@]}-1)) ] && files+=($WORK/$path) || outpath="$path"
@@ -82,14 +90,15 @@ fw() {
 	[ ${#files[@]} -gt 0 ] || error "No files specified to copy to '$outpath'!"
 	[ -e "$outdir" ] || mkdir -p "$outdir"
 	if [[ ${#files[@]} -gt 1 ]]; then
-		cp -a ${files[*]} $outdir || error "Failed to copy $PARTLABEL files to '$outdir'!"
+		cp "${optional_args[@]}" -a ${files[*]} $outdir || error "Failed to copy $PARTLABEL files to '$outdir'!"
 	else
-		cp -a ${files[*]} $outpath || error "Failed to copy '${files[*]}' to '$outdir'!"
+		cp "${optional_args[@]}" -a ${files[*]} $outpath || error "Failed to copy '${files[*]}' to '$outdir'!"
 	fi
 
 	# PIL image squashing to MBN
 	if [[ "$outpath" = *".mbn" ]]; then
-		local mdt="$(get_outdir_mdt $outdir ${files[*]})"
+		[[ ${#optional_args} -gt 0 && -r $outpath ]] && return
+		mdt="$(get_outdir_mdt $outdir ${files[*]})"
 		[ -r "$mdt" ] || error "Couldn't find .mdt header for '$outpath'!"
 		if [ "$SQUASH_TO_MBN" ]; then
 			# cleanup .mbn -> .mdt symlink (which breaks pil-squasher)
