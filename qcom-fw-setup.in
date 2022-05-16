@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # config
 CFG=@CFG_DIR@
 FW_DIR=@FW_DIR@
