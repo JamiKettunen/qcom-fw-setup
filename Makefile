@@ -4,11 +4,11 @@ CFG_DIR ?= /etc/qcom-fw-setup
 QCA_SAK_DIR ?= /var/lib/qcom-fw-setup/qca-swiss-army-knife
 
 build: qcom-fw-setup
-qcom-fw-setup: qcom-fw-setup.in
+qcom-fw-setup: qcom-fw-setup.sh.in
 	sed -e "s|@FW_DIR@|$(FW_DIR)|" \
 	    -e "s|@CFG_DIR@|$(CFG_DIR)|" \
 	    -e "s|@QCA_SAK_DIR@|$(QCA_SAK_DIR)|" \
-	    qcom-fw-setup.in > qcom-fw-setup
+	    qcom-fw-setup.sh.in > qcom-fw-setup
 
 check:
 	shellcheck qcom-fw-setup
