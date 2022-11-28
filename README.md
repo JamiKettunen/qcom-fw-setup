@@ -3,14 +3,10 @@ Configurable firmware setup script for Qualcomm devices running Linux.
 
 ## Configuration
 1. Create a file with a name matching one (preferably the first) of the values output by the following under `/etc/qcom-fw-setup` directory:
-```bash
-while read -d '' board; do
-  echo ${board/,/-}
-done </proc/device-tree/compatible
+```sh
+tr '\0,' '\n-' < /proc/device-tree/compatible
 ```
 This is going to be the config file for your device.
-
-**NOTE:** `read -d` requires a `bash` shell!
 
 2. Investigate the partition layout of your device and make notes on where to find firmware for e.g. GPU, BT, Wi-Fi and other DSPs, then
 3. Write a config file for your device like this one for `oneplus-dumpling`:
