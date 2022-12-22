@@ -5,9 +5,9 @@ SQUASH_TO_MBN=true
 process_fw() {
 	# GPU + IPA
 	par vendor
-	fw firmware/a540_zap.{mdt,b*}                    qcom/msm8998/oneplus/a540_zap.mbn
+	fw firmware/a540_zap.{mdt,b*}                       qcom/msm8998/oneplus/a540_zap.mbn
 	fw -o firmware/{a530_{pfp.fw,pm4.fw},a540_gpmu.fw2} qcom/
-	fw firmware/ipa_fws.{mdt,b*}                     qcom/msm8998/oneplus/ipa_fws.mbn
+	fw firmware/ipa_fws.{mdt,b*}                        qcom/msm8998/oneplus/ipa_fws.mbn
 
 	# BT
 	par bluetooth
