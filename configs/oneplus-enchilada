@@ -5,9 +5,9 @@ SQUASH_TO_MBN=true
 process_fw() {
 	# GPU + IPA
 	par vendor
-	fw    firmware/a630_zap.{mdt,b*}      qcom/sdm845/oneplus6/a630_zap.mbn
-	fw -o firmware/a630_g{pmu.fw2,mu.bin} qcom/
-	fw    firmware/ipa_fws.{mdt,b*}       qcom/sdm845/oneplus6/ipa_fws.mbn
+	fw    firmware/a630_zap.{mdt,b*} qcom/sdm845/oneplus6/a630_zap.mbn
+	fw -o firmware/a630_gmu.bin      qcom/
+	fw    firmware/ipa_fws.{mdt,b*}  qcom/sdm845/oneplus6/ipa_fws.mbn
 
 	# OnePlus 6T speaker
 	fw -a etc/firmware/tfa98xx.cnt .
