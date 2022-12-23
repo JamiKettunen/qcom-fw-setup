@@ -69,6 +69,12 @@ get_cmdline_opt() {
 par() {
 	umount_fw
 	PARTLABEL="$1"
+	# e.g. ignored bootloader cmdline kernel boots on A/B devices
+	if [[ -z "$SLOTSUFFIX" && ! -e /dev/disk/by-partlabel/$PARTLABEL && -e /dev/disk/by-partlabel/${PARTLABEL}_a ]]; then
+		echo "Setting slot suffix to '_a' as it wasn't detected in /proc/cmdline"
+		SLOTSUFFIX="_a"
+	fi
+
 	mount -o ro PARTLABEL=$PARTLABEL$SLOTSUFFIX "$WORK" || error "Failed to mount '$PARTLABEL$SLOTSUFFIX'!"
 }
 fw() {
