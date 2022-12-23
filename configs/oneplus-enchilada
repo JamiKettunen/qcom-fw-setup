@@ -1,0 +1,29 @@
+# OnePlus 6/6T
+. sdm845-wlan
+SQUASH_TO_MBN=true
+
+process_fw() {
+	# GPU + IPA
+	par vendor
+	fw    firmware/a630_zap.{mdt,b*}      qcom/sdm845/oneplus6/a630_zap.mbn
+	fw -o firmware/a630_g{pmu.fw2,mu.bin} qcom/
+	fw    firmware/ipa_fws.{mdt,b*}       qcom/sdm845/oneplus6/ipa_fws.mbn
+
+	# OnePlus 6T speaker
+	fw -a etc/firmware/tfa98xx.cnt .
+
+	# BT
+	par bluetooth
+	fw -o image/crbtfw21.tlv qca/
+	fw    image/crnv21.bin   qca/oneplus6/
+
+	# ADSP, CDSP, Venus, Modem, Wi-Fi
+	par modem
+	fw image/adsp.{mdt,b*}                                 qcom/sdm845/oneplus6/adsp.mbn
+	fw image/cdsp.{mdt,b*}                                 qcom/sdm845/oneplus6/cdsp.mbn
+	fw image/venus.{mdt,b*}                                qcom/sdm845/oneplus6/venus.mbn
+	fw image/modem.{mdt,b*}                                qcom/sdm845/oneplus6/modem.mbn
+	fw image/{mba,wlanmdsp}.mbn                            qcom/sdm845/oneplus6/
+	fw image/{adsp{r,ua},cdspr,modem{r,uw},slpi{r,us}}.jsn qcom/sdm845/oneplus6/
+	fw image/bdwlan*.*                                     bdwlan/
+}
