@@ -74,10 +74,11 @@ par() {
 fw() {
 	[ "$PARTLABEL" ] || error "No PARTLABEL defined, not processing 'fw $*'!"
 
-	local optional_args=() paths=() path files=() outpath outdir mdt
+	local optional_args=() allow_error paths=() path files=() outpath outdir mdt
 	while [ $# -gt 0 ]; do
 		case "$1" in
 			-o) optional_args+=(-n) ;;
+			-a) allow_error=yes ;;
 			*) paths+=("$1") ;;
 		esac
 		shift
@@ -93,9 +94,13 @@ fw() {
 	[ ${#files[@]} -gt 0 ] || error "No files specified to copy to '$outpath'!"
 	[ -e "$outdir" ] || mkdir -p "$outdir"
 	if [[ ${#files[@]} -gt 1 ]]; then
-		cp "${optional_args[@]}" -a ${files[*]} $outdir || error "Failed to copy $PARTLABEL files to '$outdir'!"
+		if ! cp "${optional_args[@]}" -a ${files[*]} $outdir && [ -z "$allow_error" ]; then
+			error "Failed to copy $PARTLABEL files to '$outdir'!"
+		fi
 	else
-		cp "${optional_args[@]}" -a ${files[*]} $outpath || error "Failed to copy '${files[*]}' to '$outdir'!"
+		if ! cp "${optional_args[@]}" -a ${files[*]} $outpath && [ -z "$allow_error" ]; then
+			error "Failed to copy '${files[*]}' to '$outdir'!"
+		fi
 	fi
 
 	# PIL image squashing to MBN

@@ -42,7 +42,9 @@ process_fw() {
 
 `par modem` sets `PARTLABEL=modem` and defines where to extract the files following it's declaration from (see `/dev/disk/by-partlabel`).
 
-The extraction lines have a `fw <FILES> <TARGET>` format where bash brace expansion usage is also possible for `<FILES>`. `<FILES>` are relative to the current `PARTLABEL` filesystem root and `<TARGET>` is relative to `/lib/firmware`.
+The extraction lines have a `fw <FILES> <TARGET>` format where bash brace expansion usage is also possible for `<FILES>`. `<FILES>` are relative to the current `PARTLABEL` filesystem root and `<TARGET>` (may be `.`) is relative to `/lib/firmware/`. Optional arguments to `fw` include:
+- `-o`: Don't overwrite pre-existing files, such as those from e.g. `linux-firmware`
+- `-a`: Allow failures in copying files without a fatal error
 
 To combine a `.{mdt,b*}` files into a `.mbn` set the target as a file with this extension as well as `SQUASH_TO_MBN=true`. In case `pil-squasher` is misssing or `SQUASH_TO_MBN=false` it will become a symlink to the `.mdt` instead.
 
