@@ -1,0 +1,26 @@
+# Xiaomi Pocophone F1
+. sdm845-wlan
+SQUASH_TO_MBN=true
+
+process_fw() {
+	# GPU, IPA, Loudspeaker
+	par vendor
+	fw    firmware/a630_zap.{mdt,b*} qcom/sdm845/beryllium/a630_zap.mbn
+	fw -o firmware/a630_gmu.bin      qcom/
+	fw    firmware/ipa_fws.{mdt,b*}  qcom/sdm845/beryllium/ipa_fws.mbn
+	fw    firmware/tas2559_uCDSP.bin .
+
+	# BT
+	par bluetooth
+	fw -o image/cr{btfw21.tlv,nv21.bin} qca/
+
+	# ADSP, CDSP, Venus, Modem, Wi-Fi
+	par modem
+	fw image/adsp.{mdt,b*}                                 qcom/sdm845/beryllium/adsp.mbn
+	fw image/cdsp.{mdt,b*}                                 qcom/sdm845/beryllium/cdsp.mbn
+	fw image/venus.{mdt,b*}                                qcom/sdm845/beryllium/venus.mbn
+	fw image/modem.{mdt,b*}                                qcom/sdm845/beryllium/modem.mbn
+	fw image/{mba,wlanmdsp}.mbn                            qcom/sdm845/beryllium/
+	fw image/{adsp{r,ua},cdspr,modem{r,uw},slpi{r,us}}.jsn qcom/sdm845/beryllium/
+	fw image/bdwlan*.*                                     bdwlan/
+}
