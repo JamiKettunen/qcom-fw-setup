@@ -55,4 +55,5 @@ To generate WLAN files (for e.g. `ath10k`) you need to add the `bdwlan*.*` FW in
 ## See also
 * [firmware-mainline-oneplus5](https://github.com/JamiKettunen/firmware-mainline-oneplus5)
 * [msm-firmware-loader pmaports MR](https://gitlab.com/postmarketOS/pmaports/-/merge_requests/2431)
+* [Mobian's droid-juicer](https://gitlab.com/mobian1/droid-juicer)
 * [qca-swiss-army-knife](https://github.com/qca/qca-swiss-army-knife)
