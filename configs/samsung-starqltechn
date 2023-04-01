@@ -1,0 +1,23 @@
+# Samsung Galaxy S9 SM-G9600
+. sdm845-wlan
+SQUASH_TO_MBN=true
+
+process_fw() {
+	# GPU + IPA + CDSP, Venus, Wi-Fi
+	par apnhlos
+	fw image/a630_zap.{mdt,b*}      qcom/sdm845/starqltechn/a630_zap.mbn
+	fw -o image/a630_gmu.bin        qcom/
+	fw image/ipa_fws.{mdt,b*}       qcom/sdm845/starqltechn/ipa_fws.mbn
+	fw image/cdsp.{mdt,b*}          qcom/sdm845/starqltechn/cdsp.mbn
+	fw image/venus.{mdt,b*}         qcom/sdm845/starqltechn/venus.mbn
+	fw image/bdwlan*.*              bdwlan/
+	fw image/wlanmdsp.mbn           qcom/sdm845/starqltechn/
+	fw image/{cdspr,slpi{r,us}}.jsn qcom/sdm845/starqltechn/
+
+	# ADSP, Modem
+	par modem
+	fw image/adsp.{mdt,b*}                qcom/sdm845/starqltechn/adsp.mbn
+	fw image/modem.{mdt,b*}               qcom/sdm845/starqltechn/modem.mbn
+	fw image/mba.mbn                      qcom/sdm845/starqltechn/
+	fw image/{adsp{r,ua},modem{r,uw}}.jsn qcom/sdm845/starqltechn/
+}
